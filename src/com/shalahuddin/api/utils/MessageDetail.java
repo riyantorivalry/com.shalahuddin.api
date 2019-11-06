@@ -3,7 +3,7 @@ package com.shalahuddin.api.utils;
 public class MessageDetail {
 	private int status;
 	private String message;
-	private Object detailmessage;
+	private Object detailMessage;
 
 	public int getStatus() {
 		return status;
@@ -17,10 +17,10 @@ public class MessageDetail {
 	public void setMessage(String message) {
 		this.message = message;
 	}
-	public Object getDetailmessage() {
-		return detailmessage;
+	public Object getDetailMessage() {
+		return detailMessage;
 	}
-	public void setDetailmessage(Object detailmessage) {
-		this.detailmessage = detailmessage;
+	public void setDetailMessage(Object detailMessage) {
+		this.detailMessage = detailMessage;
 	}
 }

@@ -2,15 +2,27 @@ package com.shalahuddin.api.model;
 
 import java.util.List;
 
-import org.apache.poi.ss.formula.functions.T;
-
 import com.shalahuddin.api.utils.MessageDetail;
 
-public class RestResponseModel {
+public class RestResponseModel <T>{
 	private MessageDetail info;
 	private int totalRow;
 	private String errorMessage;
 	private List<T> content;
+	private String id;
+
+
+	public RestResponseModel() {
+		super();
+	}
+
+	public String getId() {
+		return id;
+	}
+
+	public void setId(String id) {
+		this.id = id;
+	}
 
 	public MessageDetail getInfo() {
 		return info;
