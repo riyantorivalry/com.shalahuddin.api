@@ -1,5 +1,152 @@
 package com.shalahuddin.api.controller;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+import org.apache.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.validation.BindingResult;
+import org.springframework.validation.FieldError;
+import org.springframework.validation.ObjectError;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.shalahuddin.api.entity.Alumni;
+import com.shalahuddin.api.model.RestResponseModel;
+import com.shalahuddin.api.service.AlumniService;
+import com.shalahuddin.api.utils.ControllerHelper;
+import com.shalahuddin.api.utils.MessageDetail;
+
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
+
+@CrossOrigin("*")
+@RestController
+@RequestMapping("alumni")
+@Api(value = "ALUMNI API", description = "Operation Pertaining to ALUMNI", tags = "ALUMNI")
 public class AlumniController {
+	Logger logger = Logger.getLogger(getClass());
+
+	@Autowired
+	AlumniService alumniService;
+
+	@ApiOperation(value = "Get All Alumni", response = RestResponseModel.class)
+	@GetMapping("/getAll")
+	public ResponseEntity<RestResponseModel<Alumni>> findAll(){
+		List<Alumni> data = alumniService.findAll();
+		int totalRow = 0;
+		if (null != data) {
+			totalRow = data.size();
+		}
+
+		RestResponseModel<Alumni> resp = new RestResponseModel<>();
+		resp.setContent(data);
+		resp.setTotalRow(totalRow);
+		resp.setId("getAll");
+
+		MessageDetail info = new MessageDetail();
+		if (totalRow == 0) {
+			logger.info("NO_CONTENT ....");
+			info.setMessage(HttpStatus.NO_CONTENT.name());
+			info.setStatus(HttpStatus.NO_CONTENT.value());
+			resp.setInfo(info);
+			return new ResponseEntity<>(resp, HttpStatus.OK);
+		} else {
+			info.setMessage(HttpStatus.OK.name());
+			info.setStatus(HttpStatus.OK.value());
+			resp.setInfo(info);
+			return new ResponseEntity<>(resp, HttpStatus.OK);
+		}
+	}
+
+	@ApiOperation(value = "Create Alumni", response = RestResponseModel.class)
+	@RequestMapping(value = "/create", method = RequestMethod.POST)
+	public ResponseEntity<RestResponseModel<Alumni>> doSave(@RequestBody Alumni alumni, BindingResult result){
+		RestResponseModel<Alumni> resp = new RestResponseModel<>();
+		MessageDetail info = new MessageDetail();
+		if(result.hasErrors()) {
+			String sfieldErrors="";
+			for (ObjectError error : result.getAllErrors()) { // 1.
+				String fieldErrors = ((FieldError) error).getField(); // 2.
+				sfieldErrors=sfieldErrors+fieldErrors+" : " +error.getDefaultMessage() + ", ";
+			}
+			sfieldErrors=sfieldErrors.substring(0, sfieldErrors.length()-1);
+			info.setDetailMessage(sfieldErrors);
+			info.setMessage(HttpStatus.NOT_ACCEPTABLE.name());
+			info.setStatus(HttpStatus.NOT_ACCEPTABLE.value());
+			resp.setInfo(info);
+			resp.setErrorMessage(HttpStatus.NOT_ACCEPTABLE.name());
+			return new ResponseEntity<>(resp, HttpStatus.NOT_ACCEPTABLE);
+
+		}
+		if (null == alumni) {
+			logger.info("Alumni with Not Found");
+			info.setMessage(HttpStatus.NOT_FOUND.name());
+			info.setStatus(HttpStatus.NOT_FOUND.value());
+			resp.setInfo(info);
+			return new ResponseEntity<>(resp, HttpStatus.NOT_FOUND);
+		} else if (result.hasErrors()) {
+			logger.info("Alumni property is not correct");
+			info.setMessage(HttpStatus.BAD_REQUEST.name());
+			info.setStatus(HttpStatus.BAD_REQUEST.value());
+			info.setDetailMessage(ControllerHelper.parseValidationError(result));
+			resp.setInfo(info);
+			return new ResponseEntity<>(resp, HttpStatus.BAD_REQUEST);
+		} else {
+			// Call process
+			String rtn = alumniService.save(alumni);
+			if(rtn.contains("IS_EXIST"))
+			{
+				info.setMessage(HttpStatus.CONFLICT.name());
+				info.setStatus(HttpStatus.CONFLICT.value());
+				info.setDetailMessage("Data sudah ada");
+				resp.setInfo(info);
+				return new ResponseEntity<>(resp, HttpStatus.CONFLICT);
+			}else{
+				logger.info("Save Alumni, with id: " + alumni.getId());
+				info.setMessage(HttpStatus.OK.name());
+				info.setStatus(HttpStatus.OK.value());
+			}
+			resp.setInfo(info);
+			return new ResponseEntity<>(resp, HttpStatus.OK);
+		}
+
+	}
+
+	@ApiOperation(value = "Get Singgle Alumni Record by ID", response = RestResponseModel.class)
+	@RequestMapping(value = "/{id}", method = RequestMethod.GET)
+	public ResponseEntity<RestResponseModel<Alumni>> getRecord(@PathVariable("id") Integer id) {
+		RestResponseModel<Alumni> resp = new RestResponseModel<>();
+		MessageDetail info = new MessageDetail();
+		if (!alumniService.isExist(id)) {
+			logger.info("Alumni with id: " + id + " Not Found");
+			info.setMessage(HttpStatus.NOT_FOUND.name());
+			info.setStatus(HttpStatus.NOT_FOUND.value());
+			info.setDetailMessage("Alumni with id: " + id + ", Not Found");
+			resp.setInfo(info);
+			return new ResponseEntity<>(resp, HttpStatus.NOT_FOUND);
+		} else {
+			logger.info("Find Alumni, with id: " + id);
+
+			Alumni data = alumniService.findOneById(id);
+
+			resp.setContent(new ArrayList<>(Arrays.asList(data)));
+			resp.setTotalRow(1);
+
+			info.setMessage(HttpStatus.OK.name());
+			info.setStatus(HttpStatus.OK.value());
+			resp.setInfo(info);
+
+			return new ResponseEntity<>(resp, HttpStatus.OK);
+		}
+	}
 
 }
